@@ -96,12 +96,13 @@ func changeTopic(topic string) string {
 
 func NewNatsMQ(conf *Config, logger logrus.FieldLogger) mq.MQ {
 	natsMQ := &Nats{
-		logger:           logger,
+		logger: logger,
 	}
 	reconnectWait := conf.ReconnectWait
 	if reconnectWait <= 0 {
 		reconnectWait = 2
 	}
+	var connected = make(chan bool)
 	go func() {
 		for {
 			err := natsMQ.Connect(conf)
@@ -112,7 +113,9 @@ func NewNatsMQ(conf *Config, logger logrus.FieldLogger) mq.MQ {
 				break
 			}
 		}
+		connected <- true
 		logger.Info("nats server connected")
 	}()
+	<-connected
 	return natsMQ
 }
